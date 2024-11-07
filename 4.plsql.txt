@@ -1,0 +1,54 @@
+create database plsql;
+use plsql;
+CREATE TABLE Borrower (
+    rollno INT PRIMARY KEY,
+    name VARCHAR(20),
+    date_of_issue DATE,
+    name_of_book VARCHAR(20),
+    status VARCHAR(5)
+);
+CREATE TABLE Fine (
+    rollno INT,
+    fdate DATE,
+    amt INT,
+    FOREIGN KEY (rollno) REFERENCES Borrower(rollno)
+);
+INSERT INTO Borrower VALUES 
+(1, 'A', '2024-10-03', 'Java', 'I'),
+(2, 'B', '2024-10-23', 'DBMS', 'I'),
+(3, 'C', '2024-11-16', 'Network', 'I');
+DELIMITER ;
+DELIMITER //
+
+CREATE PROCEDURE fine_cal(IN rno INT, IN book_name VARCHAR(20))
+BEGIN
+    DECLARE i_date DATE;
+    DECLARE diff INT DEFAULT 0;
+    DECLARE fine_amt INT DEFAULT 0;
+DECLARE CONTINUE HANDLER FOR NOT FOUND BEGIN
+        SET fine_amt = NULL;
+        SELECT 'Book or Roll Number not found.' AS error_message;
+    END;
+    SELECT date_of_issue INTO i_date
+    FROM Borrower 
+    WHERE rollno = rno AND name_of_book = book_name;
+    IF i_date IS NOT NULL THEN
+        SET diff = DATEDIFF(CURDATE(), i_date);
+IF diff BETWEEN 15 AND 30 THEN
+            SET fine_amt = diff * 5;
+        ELSEIF diff > 30 THEN
+            SET fine_amt = (30 * 5) + ((diff - 30) * 50);
+        END IF;
+ IF fine_amt > 0 THEN
+            INSERT INTO Fine (rollno, fdate, amt) VALUES (rno, CURDATE(), fine_amt);
+        END IF;
+UPDATE Borrower 
+        SET status = 'R' 
+        WHERE rollno = rno AND name_of_book = book_name;
+    END IF;
+END //
+DELIMITER ;
+CALL fine_cal(1, 'Java');
+SELECT * FROM Borrower;
+SELECT * FROM Fine;
+

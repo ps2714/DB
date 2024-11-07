@@ -1,0 +1,39 @@
+create database cur;
+use cur;
+create table N_roll_call(s_id int, s_name varchar(20), s_add varchar(20));
+
+create table O_roll_call(s_id int, s_name varchar(20), s_add varchar(20));
+
+insert into N_roll_call values(1, 'AAA', 'Pune'),(2, 'BBB', 'Mumbai'),(3, 'CCC', 'Pune');
+
+insert into O_roll_call values(1, 'AAA', 'Pune'),(4, 'DDD', 'Thane');
+
+delimiter ;
+delimiter //
+create procedure merge()
+begin
+declare v_id int;
+declare v_name varchar(20);
+declare v_add varchar(20);
+declare rollcursor cursor for select s_id,s_name,s_add from N_roll_call;
+declare continue handler for not found set v_id=NULL;
+open rollcursor;
+read_loop:LOOP
+fetch rollcursor into v_id, v_name, v_add;
+if v_id is NULL then
+leave read_loop;
+end if;
+if not exists (select 1 from O_roll_call where s_id=v_id) then
+insert into O_roll_call values(v_id, v_name, v_add);
+end if;
+end LOOP;
+close rollcursor;
+end //
+
+delimiter ;
+
+call merge();
+
+select * from N_roll_call;
+
+select * from O_roll_call;

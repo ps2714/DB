@@ -1,0 +1,246 @@
+Design and Develop SQL DDL statements which demonstrate the use of SQL
+objects such as Table, View, Index, Sequence, Synonym, different constraints
+etc.
+ show databases;
+
+ CREATE DATABASE BankDB;
+
+CREATE TABLE account(acc_no INT primary key ,branch_name varchar(50)NOT NULL,balance DECIMAL(10,2) CHECK (balance>=0));
+
+CREATE TABLE Branch(branch_name VARCHAR(50) primary key,branch_city v
+archar(50) NOT NULL,assets DECIMAL(10,2) check (assets>=0));
+
+CREATE table customer(cust_name varchar(50) primary key NOT NULL,cust_street varchar (50) not null,cust_city varchar(50)not null);
+
+CREATE TABLE Depositor(cust_name varchar(50),acc_no INT,foreign key(cust_name) references customer(cust_name),foreign key (acc_no) references account(acc_no));
+
+ create table loan(loan_no INT primary key,branch_name varchar(50),amount DECIMAL(10, 2) CHECK (amount >= 0),FOREIGN KEY (branch_name) REFERENCES Branch(branch_name));
+
+ CREATE TABLE Borrower(cust_name VARCHAR(50),loan_no INT,FOREIGN KEY (cust_name) REFERENCES customer(cust_name),FOREIGN KEY (loan_no) REFERENCES Loan(loan_no));
+
+INSERT INTO branch VALUES ('Akurdi', 'Pune', 500000);
+INSERT INTO branch VALUES ('Nigdi', 'Pune', 300000);
+
+INSERT INTO Account VALUES (101, 'Akurdi', 15000);
+INSERT INTO Account VALUES (102, 'Nigdi', 8000);
+
+INSERT INTO customer VALUES ('John Doe', '123 Main St', 'Pune');
+INSERT INTO customer VALUES ('Jane Smith', '456 Oak St', 'Pune');
+
+INSERT INTO Depositor VALUES ('John Doe', 101);
+INSERT INTO Depositor VALUES ('Jane Smith', 102);
+
+INSERT INTO Loan VALUES (201, 'Akurdi', 15000);
+INSERT INTO Loan VALUES (202, 'Nigdi', 10000);
+
+Q1. Find the names of all branches in the loan relation:
+SELECT DISTINCT branch_name FROM Loan;
+
+Q2. Find all loan numbers for loans made at Akurdi Branch with loan amount > 1200:
+SELECT loan_no FROM Loan WHERE branch_name = 'Akurdi' AND amount > 12000;
+
+Q3. Find all customers who have a loan from the bank. Find their names, loan_no, and loan amount:
+SELECT customer.cust_name, Borrower.loan_no, Loan.amount FROM Borrower JOIN Loan ON Borrower.loan_no = Loan.loan_no JOIN customer ON Borrower.cust_name = customer.cust_name;
+
+Q4. List all customers in alphabetical order who have a loan from Akurdi branch:
+ select customer.cust_name from borrower join loan on borrower.loan_no=loan.loan_no join customer on borrower.cust_name = customer.cust_name where loan.branch_name='akurdi' ORDER BY customer.cust_name;
+
+
+Q5. Find all customers who have an account or loan or both at the bank:
+ select customer.cust_name from customer LEFT JOIN Depositor ON customer.cust_name = Depositor.cust_name LEFT JOIN Borrower ON customer.cust_name = Borrower.cust_name;
+
+
+Q6. Find all customers who have both an account and a loan at the bank:
+ SELECT DISTINCT customer.cust_name FROM customer JOIN Depositor ON customer.cust_name = Depositor.cust_name JOIN Borrower ON customer.cust_name = Borrower.cust_name;
+
+Q7. Find all customers who have an account but no loan at the bank:
+ SELECT DISTINCT customer.cust_name FROM customer JOIN Depositor ON customer.cust_name = Depositor.cust_name LEFT JOIN Borrower ON customer.cust_name = Borrower.cust_name WHERE Borrower.cust_name IS NULL;
+
+Q8. Find average account balance at Akurdi branch:
+ select avg(balance) as avg_balance FROM Account WHERE branch_name = 'Akurdi';
+
+Q9. Find the average account balance at each branch:
+ SELECT branch_name, AVG(balance) AS avg_balance FROM Account GROUP BY branch_name;
+
+Q10. Find the number of depositors at each branch:
+ SELECT branch_name, COUNT(DISTINCT cust_name) AS num_depositors FROM Depositor JOIN Account ON Depositor.acc_no = Account.Acc_no GROUP BY branch_name;
+
+Q11. Find the branches where average account balance > 12000:
+ SELECT branch_name FROM Account GROUP BY branch_name HAVING AVG(balance) > 12000;
+
+Q12. Find the number of tuples in customer relation:
+SELECT COUNT(*) AS num_customers FROM customer;
+
+Q13. Calculate the total loan amount given by the bank:
+SELECT SUM(amount) AS total_loan_amount FROM Loan;
+
+Q14. Delete all loans with loan amount between 1300 and 1500:
+DELETE FROM Loan WHERE amount BETWEEN 1300 AND 1500;
+
+Q17. Create sequence roll_seq and use in student table for roll_no column:
+CREATE SEQUENCE roll_seq
+START WITH 1
+INCREMENT BY 1;
+
+-- Assuming a student table exists
+CREATE TABLE student (
+    roll_no INT DEFAULT roll_seq.NEXTVAL,
+    name VARCHAR(100),
+    age INT
+);
+
+
+
+PRACTICAL2////////////////
+1. Inner Join Example
+Find the names of all customers and their account balances.
+ SELECT customer.cust_name, Account.balance FROM customer JOIN Depositor ON customer.cust_name = Depositor.cust_name JOIN Account ON Depositor.acc_no = Account.Acc_no;
+
+2. Left Join Example
+List all customers and their loan amounts. Include customers who don’t have a loan.
+SELECT customer.cust_name, Loan.amount FROM customer LEFT JOIN Borrower ON customer.cust_name = Borrower.cust_name LEFT JOIN Loan ON Borrower.loan_no = Loan.loan_no;
+
+3. Right Join Example
+Find all branches and the account balances of accounts at each branch, including branches with no accounts.
+SELECT branch.branch_name, Account.balance FROM branch RIGHT JOIN Account ON branch.branch_name = Account.branch_name;
+
+4. Full Outer Join Example
+In MySQL, a full outer join can be simulated using a combination of left and right joins. Here’s an example that lists all customers who either have an account or a loan (or both).
+SELECT customer.cust_name, Account.balance, Loan.amount 
+FROM customer 
+LEFT JOIN Depositor ON customer.cust_name = Depositor.cust_name
+LEFT JOIN Account ON Depositor.acc_no = Account.Acc_no
+LEFT JOIN Borrower ON customer.cust_name = Borrower.cust_name
+LEFT JOIN Loan ON Borrower.loan_no = Loan.loan_no
+
+UNION
+
+SELECT customer.cust_name, Account.balance, Loan.amount 
+FROM customer 
+RIGHT JOIN Depositor ON customer.cust_name = Depositor.cust_name
+RIGHT JOIN Account ON Depositor.acc_no = Account.Acc_no
+RIGHT JOIN Borrower ON customer.cust_name = Borrower.cust_name
+RIGHT JOIN Loan ON Borrower.loan_no = Loan.loan_no;
+
+
+5. Self Join Example
+Find pairs of customers who live in the same city.
+SELECT a.cust_name AS Customer1, b.cust_name AS Customer2, a.cust_city 
+FROM customer a 
+JOIN customer b ON a.cust_city = b.cust_city AND a.cust_name <> b.cust_name;
+
+6. Sub-query Example (Single-row Subquery)
+Find the branch with the highest total assets.
+ SELECT branch_name FROM branch WHERE assets = (SELECT MAX(assets) FROM branch);
+
+7. Sub-query Example (Multi-row Subquery)
+Find all customers who have an account with a balance greater than the average balance.
+ SELECT cust_name FROM Depositor JOIN Account ON Depositor.acc_no = Account.Acc_no WHERE Account.balance > (SELECT AVG(balance) FROM Account);
+
+8. Correlated Subquery Example
+Find customers who have more than one account.
+SELECT cust_name 
+FROM Depositor d 
+WHERE (SELECT COUNT(*) FROM Depositor WHERE cust_name = d.cust_name) > 1;
+
+9. View Example
+Create a view showing customer names, account numbers, and their balances.
+CREATE VIEW CustomerAccounts AS 
+SELECT customer.cust_name, Account.Acc_no, Account.balance 
+FROM customer 
+JOIN Depositor ON customer.cust_name = Depositor.cust_name
+JOIN Account ON Depositor.acc_no = Account.Acc_no;
+
+----------------------------------------------------------------------
+ DML*********
+create table employee(e_id int primary key not null auto_increment, e_fname varchar(20), e_lname varchar(20), e_add varchar(20), e_salary int);
+
+create table branch(e_id int auto_increment, b_id int , b_name varchar(20), foreign key(e_id) references employee (e_id));
+
+insert into employee values(null, 'Akash', 'Patel', 'Pune', 25000),(null, 'Ram', 'Sharma', 'Mumbai', 1000),(null, 'Aman', 'Shinde', 'Nashik', 30000);
+
+insert into branch values(null, 101, 'HR'),(null, 102, 'Finances'),(null, 103, 'Marketing');
+
+update employee set e_salary = 12000 where e_id=2;
+
+select * from employee;
+
+delete from employee where e_id=3;
+
+select avg(e_salary) as average_salary from employee;
+
+select * from employeedetails union select * from branch;
+
+alter table branch add column b_add varchar(20);
+
+create index id on branch(b_id);
+
+ALTER TABLE branch DROP INDEX id;
+
+-----------------------------------------------
+JOIN , SUBQUERY
+create table student(rollno int, s_name varchar(20), s_class int);
+
+create table stud_course(s_id int, c_id int, c_name varchar(20));
+
+insert into student values(1, 'A', 'TE'),(2, 'B', 'TE'),(3, 'C', 'SE'),(4, 'D', 'SE');
+
+insert into stud_course values(1, 101, 'C++'),(4, 102, 'C'),(5, 103, 'Java');
+
+create view te_dets as select * from student where s_class='TE';
+
+select * from te_dets;
+
+select s.rollno, c.c_name from student s JOIN stud_course c on s.rollno=c.s_id;
+
+select s.rollno, c.c_name from student s LEFT JOIN stud_course c on s.roll no=c.s_id;
+
+select s.rollno, c.c_name from student s RIGHT JOIN stud_course c on s.rollno=c.s_id;
+
+
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(50) NOT NULL,
+    location VARCHAR(50)
+);
+
+
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_name VARCHAR(50) NOT NULL,
+    age INT,
+    department_id INT,
+    salary DECIMAL(10, 2),
+    city VARCHAR(50),
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+
+INSERT INTO departments (department_name, location) VALUES 
+('Human Resources', 'Mumbai'),
+('Finance', 'Delhi'),
+('IT', 'Bengaluru'),
+('Marketing', 'Pune');
+
+INSERT INTO employees (employee_name, age, department_id, salary, city) VALUES
+('Amit Sharma', 28, 1, 35000, 'Mumbai'),
+('Sita Reddy', 32, 2, 50000, 'Delhi'),
+('Rahul Gupta', 25, 3, 42000, 'Bengaluru'),
+('Priya Iyer', 30, 4, 45000, 'Pune'),
+('Deepak Yadav', 27, 3, 39000, 'Bengaluru'),
+('Meera Singh', 29, 1, 38000, 'Mumbai'),
+('Karan Joshi', 33, 2, 53000, 'Delhi');
+
+
+SELECT employee_name, salary FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);
+
+
+SELECT employee_name, salary, department_id FROM employees WHERE salary IN (SELECT MAX(salary) FROM employees GROUP BY department_id);
+
+SELECT department_name FROM departments WHERE department_id IN (SELECT department_id FROM employees WHERE age > 30);
+
+
+
+
+
+
